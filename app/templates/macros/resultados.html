@@ -1,0 +1,34 @@
+{# Bloques reutilizables del panel de resultados (cabecera, histograma y el
+   script de dibujado/exportación), comunes a todas las páginas de método.
+   `sufijo` permite repetir estos bloques varias veces en una misma página
+   (p. ej. un panel por cada semilla) sin que los ids de HTML choquen. #}
+
+{% macro encabezado_acciones(sufijo="") %}
+<div class="results-panel-head">
+  <h2><i class="bi bi-table"></i> Resultados</h2>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-sm btn-outline-ink" id="btnCopiar{{ sufijo }}"><i class="bi bi-clipboard"></i> Copiar</button>
+    <button type="button" class="btn btn-sm btn-outline-ink" id="btnExportar{{ sufijo }}"><i class="bi bi-download"></i> CSV</button>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro panel_histograma(nota="Si el método funciona bien, las barras deberían verse razonablemente parejas (distribución uniforme en [0,1)).", sufijo="") %}
+<div class="histogram-panel">
+  <h3><i class="bi bi-bar-chart-line"></i> Distribución de R<sub>i</sub></h3>
+  <p class="text-muted small mb-3">{{ nota|safe }}</p>
+  <div class="histogram" id="histograma{{ sufijo }}"></div>
+</div>
+{% endmacro %}
+
+{% macro script_resultados(resultados, nombre_archivo, sufijo="") %}
+{% if resultados %}
+<script>
+(function () {
+  const riValores = [{{ resultados|map(attribute='ri')|join(', ') }}];
+  dibujarHistograma(document.getElementById('histograma{{ sufijo }}'), riValores);
+  configurarExportacion('tablaResultados{{ sufijo }}', 'btnCopiar{{ sufijo }}', 'btnExportar{{ sufijo }}', '{{ nombre_archivo }}');
+})();
+</script>
+{% endif %}
+{% endmacro %}

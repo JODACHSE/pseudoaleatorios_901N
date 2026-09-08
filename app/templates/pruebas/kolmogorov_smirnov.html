@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% from "macros/campos.html" import campo_valores_ri, campo_alpha %}
+{% from "macros/resultados.html" import encabezado_acciones, panel_histograma %}
+{% from "macros/pruebas.html" import caja_hipotesis, veredicto %}
+{% block title %}Prueba Kolmogorov-Smirnov · Pruebas 901N{% endblock %}
+
+{% block content %}
+<section class="metodo-header">
+  <div class="container">
+    <span class="eyebrow"><i class="bi bi-graph-up"></i> Prueba de uniformidad</span>
+    <h1>Prueba Kolmogorov-Smirnov</h1>
+    <p class="text-muted metodo-sub">
+      Ordena los R<sub>i</sub> de menor a mayor y compara la función de
+      distribución empírica (i/n) contra la distribución uniforme
+      teórica. Es especialmente útil para conjuntos pequeños (n &lt; 20).
+    </p>
+    <code class="metodo-formula-lg">D<sup>+</sup> = max( i/n − R<sub>i</sub> )&nbsp;&nbsp;D<sup>−</sup> = max( R<sub>i</sub> − (i−1)/n )&nbsp;&nbsp;D = max(D<sup>+</sup>, D<sup>−</sup>)</code>
+  </div>
+</section>
+
+<section class="py-4 py-lg-5">
+  <div class="container">
+    <div class="row g-4">
+
+      <div class="col-lg-4">
+        <form method="post" class="form-panel sticky-lg-top">
+          <h2 class="form-panel-title"><i class="bi bi-sliders"></i> Parámetros</h2>
+
+          {{ campo_valores_ri(valores.valores) }}
+          {{ campo_alpha(valores.alpha) }}
+
+          <button type="submit" class="btn btn-signal w-100"><i class="bi bi-play-fill"></i> Ejecutar prueba</button>
+
+          {% if not resultado %}
+          <p class="form-hint mt-3"><i class="bi bi-info-circle"></i> Ya hay un conjunto de 50 R<sub>i</sub> de ejemplo cargado: solo presiona "Ejecutar prueba".</p>
+          {% endif %}
+        </form>
+      </div>
+
+      <div class="col-lg-8">
+        {% if resultado %}
+
+          {{ caja_hipotesis("R<sub>i</sub> ~ U(0, 1) (los números son uniformes)", "R<sub>i</sub> no son uniformes") }}
+
+          {{ veredicto(resultado.cumple,
+            "D = " ~ "%.4f"|format(resultado.d) ~ " es menor o igual que el valor crítico D<sub>α,n</sub> = " ~ "%.4f"|format(resultado.d_critico) ~ ", así que no se detecta diferencia significativa con la distribución uniforme.",
+            "D = " ~ "%.4f"|format(resultado.d) ~ " supera el valor crítico D<sub>α,n</sub> = " ~ "%.4f"|format(resultado.d_critico) ~ ", así que los R<sub>i</sub> no parecen seguir una distribución uniforme.") }}
+
+          <div class="stats-row">
+            <div class="stat-chip"><span class="stat-num">{{ resultado.n }}</span><span class="stat-label">valores de R<sub>i</sub></span></div>
+            <div class="stat-chip"><span class="stat-num">{{ "%.4f"|format(resultado.d_mas) }}</span><span class="stat-label">D⁺</span></div>
+            <div class="stat-chip"><span class="stat-num">{{ "%.4f"|format(resultado.d_menos) }}</span><span class="stat-label">D⁻</span></div>
+            <div class="stat-chip"><span class="stat-num">{{ "%.4f"|format(resultado.d) }}</span><span class="stat-label">D = max(D⁺, D⁻)</span></div>
+            <div class="stat-chip"><span class="stat-num">{{ "%.4f"|format(resultado.d_critico) }}</span><span class="stat-label">D<sub>α,n</sub> crítico</span></div>
+          </div>
+
+          <div class="results-panel">
+            {{ encabezado_acciones() }}
+            <div class="table-responsive">
+              <table class="table table-generador" id="tablaResultados">
+                <thead>
+                  <tr><th>i</th><th>R<sub>i</sub> (ordenado)</th><th>i/n</th><th>(i−1)/n</th></tr>
+                </thead>
+                <tbody>
+                  {% for fila in resultado.filas %}
+                  <tr style="animation-delay: {{ loop.index0 * 8 }}ms">
+                    <td>{{ fila.i }}</td>
+                    <td class="mono ri-cell">{{ "%.4f"|format(fila.ri) }}</td>
+                    <td class="mono text-muted">{{ "%.4f"|format(fila.i_n) }}</td>
+                    <td class="mono text-muted">{{ "%.4f"|format(fila.i1_n) }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {{ panel_histograma() }}
+
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-graph-up"></i>
+            <h3>Todavía no hay resultado</h3>
+            <p>Pega tu conjunto de R<sub>i</sub> en el panel de la izquierda y presiona "Ejecutar prueba".</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if resultado %}
+<script>
+  (function () {
+    const riValores = [{{ resultado.ordenados|join(', ') }}];
+    dibujarHistograma(document.getElementById('histograma'), riValores);
+    configurarExportacion('tablaResultados', 'btnCopiar', 'btnExportar', 'prueba_kolmogorov_smirnov');
+  })();
+</script>
+{% endif %}
+{% endblock %}

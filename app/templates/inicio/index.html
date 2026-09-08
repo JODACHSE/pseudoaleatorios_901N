@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "macros/tarjetas.html" import tarjeta_metodo %}
+{% block title %}Generadores de Números Pseudoaleatorios · UCundinamarca 901N{% endblock %}
+{% block bodyclass %}pagina-inicio{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center gy-5">
+      <div class="col-lg-7">
+        <span class="eyebrow"><i class="bi bi-mortarboard"></i> Universidad de Cundinamarca · Modelación y Simulación · Grupo 901N</span>
+        <h1 class="display-4 hero-title">Siete formas de fabricar <span class="hl">números pseudoaleatorios</span> a partir de aritmética.</h1>
+        <p class="hero-lead">
+          Este sitio recoge, en un solo lugar, los métodos de generación de
+          números pseudoaleatorios y las pruebas estadísticas vistas en
+          clase. Ingresa una semilla o un conjunto de R<sub>i</sub>, deja
+          que el algoritmo haga las cuentas y observa, paso a paso, el
+          resultado.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="#temario" class="btn btn-lg btn-signal">Ver temario <i class="bi bi-arrow-down-short"></i></a>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="reel-card">
+          <div class="reel-card-label">semilla → secuencia</div>
+          <div class="digit-reel" id="digitReel" aria-hidden="true"></div>
+          <div class="reel-card-ri">R<sub>i</sub> = <span id="reelRi">0.0000</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="equipo-section py-4">
+  <div class="container">
+    <div class="equipo-panel">
+      <div class="equipo-panel-curso">
+        <i class="bi bi-mortarboard-fill"></i>
+        <div>
+          <h2>{{ curso.nombre }}</h2>
+          <p>{{ curso.universidad }} · Grupo {{ curso.grupo }}</p>
+        </div>
+      </div>
+      <div class="equipo-panel-integrantes">
+        {% for integrante in integrantes %}
+        <div class="integrante-card">
+          <i class="bi bi-person-circle"></i>
+          <div>
+            <strong>{{ integrante.nombre }}</strong>
+            <a href="mailto:{{ integrante.correo }}">{{ integrante.correo }}</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="temario" class="metodos py-5">
+  <div class="container">
+    <div class="section-heading">
+      <span class="eyebrow"><i class="bi bi-journal-bookmark"></i> Temario de clase</span>
+      <h2>Lo que hemos visto hasta ahora</h2>
+      <p class="text-muted">
+        Un resumen de los temas trabajados, agrupado igual que en el
+        documento de la semana 3 y 4: métodos no congruenciales,
+        congruenciales y las pruebas estadísticas que validan los números
+        que producen. Cada tarjeta abre su propia página interactiva.
+      </p>
+    </div>
+
+    {% for bloque in temario %}
+    <div class="temario-bloque">
+      <h3 class="temario-bloque-titulo">{{ bloque.bloque }}</h3>
+      <div class="row g-4">
+        {% for tema in bloque.temas %}
+        <div class="col-md-6 col-lg-4">
+          {{ tarjeta_metodo(tema) }}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  initDigitReel(document.getElementById('digitReel'), document.getElementById('reelRi'));
+</script>
+{% endblock %}

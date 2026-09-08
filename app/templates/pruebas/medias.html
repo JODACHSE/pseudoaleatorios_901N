@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% from "macros/campos.html" import campo_valores_ri, campo_alpha %}
+{% from "macros/resultados.html" import encabezado_acciones, panel_histograma, script_resultados %}
+{% from "macros/pruebas.html" import caja_hipotesis, veredicto %}
+{% block title %}Prueba de medias · Pruebas 901N{% endblock %}
+
+{% block content %}
+<section class="metodo-header">
+  <div class="container">
+    <span class="eyebrow"><i class="bi bi-calculator"></i> Prueba estadística</span>
+    <h1>Prueba de medias</h1>
+    <p class="text-muted metodo-sub">
+      Verifica si el valor esperado de un conjunto de números R<sub>i</sub>
+      es igual a 0.5, como debería ocurrir en una distribución uniforme
+      continua en (0, 1). Se calcula el promedio r̄ y se compara contra un
+      intervalo de aceptación construido con la distribución normal.
+    </p>
+    <code class="metodo-formula-lg">r̄ = (1/n) Σ R<sub>i</sub>&nbsp;&nbsp;&nbsp;L<sub>i,s</sub> = 0.5 ± Z<sub>α/2</sub>·(1/√(12n))</code>
+  </div>
+</section>
+
+<section class="py-4 py-lg-5">
+  <div class="container">
+    <div class="row g-4">
+
+      <div class="col-lg-4">
+        <form method="post" class="form-panel sticky-lg-top">
+          <h2 class="form-panel-title"><i class="bi bi-sliders"></i> Parámetros</h2>
+
+          {{ campo_valores_ri(valores.valores) }}
+          {{ campo_alpha(valores.alpha) }}
+
+          <button type="submit" class="btn btn-signal w-100"><i class="bi bi-play-fill"></i> Ejecutar prueba</button>
+
+          {% if not resultado %}
+          <p class="form-hint mt-3"><i class="bi bi-info-circle"></i> Ya hay un conjunto de 50 R<sub>i</sub> de ejemplo cargado: solo presiona "Ejecutar prueba".</p>
+          {% endif %}
+        </form>
+      </div>
+
+      <div class="col-lg-8">
+        {% if resultado %}
+
+          {{ caja_hipotesis("μ = 0.5 (el promedio de los R<sub>i</sub> es 0.5)", "μ ≠ 0.5 (el promedio de los R<sub>i</sub> no es 0.5)") }}
+
+          {{ veredicto(resultado.cumple,
+            "El promedio r̄ = " ~ "%.4f"|format(resultado.r_barra) ~ " cae dentro del intervalo de aceptación, así que no hay evidencia para descartar que la media de los R<sub>i</sub> sea 0.5.",
+            "El promedio r̄ = " ~ "%.4f"|format(resultado.r_barra) ~ " queda fuera del intervalo de aceptación, así que este conjunto de R<sub>i</sub> no parece tener media 0.5.") }}
+
+          <div class="stats-row">
+            <div class="stat-chip"><span class="stat-num">{{ resultado.n }}</span><span class="stat-label">valores de R<sub>i</sub></span></div>
+            <div class="stat-chip"><span class="stat-num">{{ "%.4f"|format(resultado.r_barra) }}</span><span class="stat-label">promedio r̄</span></div>
+            <div class="stat-chip"><span class="stat-num">{{ "%.4f"|format(resultado.z) }}</span><span class="stat-label">Z<sub>α/2</sub> (α={{ resultado.alpha }})</span></div>
+            <div class="stat-chip"><span class="stat-num">[{{ "%.4f"|format(resultado.li) }}, {{ "%.4f"|format(resultado.ls) }}]</span><span class="stat-label">intervalo de aceptación</span></div>
+          </div>
+
+          <div class="results-panel">
+            {{ encabezado_acciones() }}
+            <div class="table-responsive">
+              <table class="table table-generador" id="tablaResultados">
+                <thead><tr><th>i</th><th>R<sub>i</sub></th></tr></thead>
+                <tbody>
+                  {% for r in ri %}
+                  <tr style="animation-delay: {{ loop.index0 * 8 }}ms">
+                    <td>{{ loop.index }}</td>
+                    <td class="mono ri-cell">{{ "%.4f"|format(r) }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {{ panel_histograma("La media 0.5 corresponde a barras razonablemente balanceadas entre la mitad inferior y superior del histograma.") }}
+
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-calculator"></i>
+            <h3>Todavía no hay resultado</h3>
+            <p>Pega tu conjunto de R<sub>i</sub> en el panel de la izquierda y presiona "Ejecutar prueba".</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if resultado %}
+<script>
+  (function () {
+    const riValores = [{{ ri|join(', ') }}];
+    dibujarHistograma(document.getElementById('histograma'), riValores);
+    configurarExportacion('tablaResultados', 'btnCopiar', 'btnExportar', 'prueba_medias');
+  })();
+</script>
+{% endif %}
+{% endblock %}

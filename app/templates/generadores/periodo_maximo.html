@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% from "macros/campos.html" import campo_numero, campo_texto %}
+{% from "macros/resultados.html" import encabezado_acciones, panel_histograma, script_resultados %}
+{% block title %}Período máximo · Congruencial lineal · Generadores 901N{% endblock %}
+
+{% block content %}
+<section class="metodo-header">
+  <div class="container">
+    <div class="row align-items-center gy-4">
+      <div class="col-lg-7">
+        <span class="eyebrow"><i class="bi bi-rulers"></i> Análisis · Teorema de Hull-Dobell</span>
+        <h1>Período máximo del congruencial lineal</h1>
+        <p class="text-muted metodo-sub">
+          Según Banks, Carson, Nelson y Nicol, un congruencial lineal alcanza su
+          período máximo N = m (recorre los m valores antes de repetirse) si se
+          cumplen estas tres condiciones sobre a, c y m. No dependen de la
+          semilla X<sub>0</sub>: ingresa una o varias para comprobarlo.
+        </p>
+        <div class="condicion-lista">
+          <code>1) mcd(c, m) = 1</code>
+          <code>2) (a − 1) es divisible por cada primo que divide a m</code>
+          <code>3) si m es múltiplo de 4, entonces (a − 1) es múltiplo de 4</code>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <figure class="metodo-diagrama">
+          <img src="{{ url_for('static', filename='img/algoritmo-periodo-maximo.svg') }}" alt="Trayectoria de período máximo con X0=6, a=13, c=7, m=8">
+          <figcaption>Ejemplo con X<sub>0</sub>=6, a=13, c=7, m=8: cumple Hull-Dobell, recorre los 8 estados (N = m).</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-4 py-lg-5">
+  <div class="container">
+    <div class="row g-4">
+
+      <div class="col-lg-4">
+        <form method="post" class="form-panel sticky-lg-top">
+          <h2 class="form-panel-title"><i class="bi bi-sliders"></i> Parámetros</h2>
+
+          {{ campo_texto("semillas", "Semillas iniciales X<sub>0</sub> (una o varias)", valores.semillas,
+             ayuda="Escribe una o más semillas separadas por coma. a, c y m se comparten entre todas las corridas.",
+             placeholder="p. ej. 6, 1, 3") }}
+
+          <div class="row g-2">
+            {{ campo_numero("a", "Multiplicador (a)", valores.a, min=0, clase_col="col-6") }}
+            {{ campo_numero("c", "Incremento (c)", valores.c, min=0, clase_col="col-6") }}
+          </div>
+
+          {{ campo_numero("m", "Módulo (m)", valores.m, min=1) }}
+
+          <button type="submit" class="btn btn-signal w-100"><i class="bi bi-play-fill"></i> Analizar período</button>
+
+          {% if not analisis %}
+          <p class="form-hint mt-3"><i class="bi bi-info-circle"></i> Ejemplo del documento de clase: X<sub>0</sub>=6, a=13, c=7, m=8 (cumple las tres condiciones, k=3, g=3).</p>
+          {% endif %}
+        </form>
+      </div>
+
+      <div class="col-lg-8">
+        {% if analisis %}
+
+          <div class="veredicto-card {% if analisis.cumple_periodo_maximo %}veredicto-ok{% else %}veredicto-fail{% endif %}">
+            <i class="bi {% if analisis.cumple_periodo_maximo %}bi-patch-check-fill{% else %}bi-patch-exclamation-fill{% endif %}"></i>
+            <div>
+              <h3>
+                {% if analisis.cumple_periodo_maximo %}
+                  Este generador SÍ alcanza el período máximo (m = {{ valores.m }})
+                {% else %}
+                  Este generador NO alcanza el período máximo
+                {% endif %}
+              </h3>
+              <p>
+                {% if analisis.cumple_periodo_maximo %}
+                  Con estos valores de a, c y m, la secuencia recorrerá los {{ valores.m }} residuos posibles antes de repetirse, sin importar la semilla X<sub>0</sub> con la que arranque.
+                {% else %}
+                  Al menos una condición del teorema de Hull-Dobell no se cumple, así que el ciclo se cerrará antes de recorrer los {{ valores.m }} valores posibles (esto puede variar según la semilla X<sub>0</sub>).
+                {% endif %}
+              </p>
+            </div>
+          </div>
+
+          <div class="condiciones-grid">
+            <div class="condicion-card {% if analisis.cond1_cm_coprimos %}condicion-ok{% else %}condicion-fail{% endif %}">
+              <i class="bi {% if analisis.cond1_cm_coprimos %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+              <div>
+                <strong>mcd(c, m) = 1</strong>
+                <span>c = {{ valores.c }}, m = {{ valores.m }}</span>
+              </div>
+            </div>
+
+            <div class="condicion-card {% if analisis.cond2_a1_divisible_primos %}condicion-ok{% else %}condicion-fail{% endif %}">
+              <i class="bi {% if analisis.cond2_a1_divisible_primos %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+              <div>
+                <strong>(a − 1) divisible por cada primo de m</strong>
+                <span>primos de m = {{ analisis.primos_m|join(', ') if analisis.primos_m else 'ninguno (m = 1)' }}</span>
+              </div>
+            </div>
+
+            <div class="condicion-card {% if analisis.cond3_a1_divisible_4 %}condicion-ok{% else %}condicion-fail{% endif %}">
+              <i class="bi {% if analisis.cond3_a1_divisible_4 %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+              <div>
+                <strong>(a − 1) divisible por 4, si 4 | m</strong>
+                <span>{% if analisis.cond3_aplica %}m es múltiplo de 4 → condición aplica{% else %}m no es múltiplo de 4 → condición no aplica{% endif %}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="results-panel">
+            <div class="results-panel-head">
+              <h2><i class="bi bi-list-check"></i> Comparación entre semillas</h2>
+            </div>
+            <p class="text-muted small px-3 pt-3 mb-0">
+              El período detectado no debería cambiar según la semilla si se cumplen las tres condiciones de arriba.
+            </p>
+            <div class="table-responsive">
+              <table class="table table-generador">
+                <thead>
+                  <tr>
+                    <th>Semilla X<sub>0</sub></th>
+                    <th>Período detectado</th>
+                    <th>Período máximo posible (m)</th>
+                    <th>¿Alcanza el máximo?</th>
+                    <th>¿Ciclo inicia en X<sub>0</sub>?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for corrida in corridas %}
+                  <tr style="animation-delay: {{ loop.index0 * 12 }}ms">
+                    <td class="mono">{{ corrida.x0 }}</td>
+                    <td class="mono">{{ corrida.periodo if corrida.periodo else corrida.resultados|length }}</td>
+                    <td class="mono">{{ valores.m }}</td>
+                    <td>
+                      {% if corrida.periodo == (valores.m|int) %}
+                        <span class="text-success"><i class="bi bi-check-circle-fill"></i> Sí</span>
+                      {% else %}
+                        <span class="text-danger"><i class="bi bi-x-circle-fill"></i> No</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if corrida.inicio_ciclo is not none and corrida.inicio_ciclo > 0 %}
+                        <span class="text-warning"><i class="bi bi-exclamation-triangle-fill"></i> No (empieza en i={{ corrida.inicio_ciclo }})</span>
+                      {% else %}
+                        Sí
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {% for corrida in corridas %}
+          <div class="results-panel">
+            {{ encabezado_acciones("-" ~ loop.index0) }}
+            <p class="text-muted small px-3 pt-3 mb-0">
+              Semilla X<sub>0</sub> = {{ corrida.x0 }}. Se generó hasta detectar la repetición de un valor (o hasta 2000 términos como tope de seguridad). R<sub>i</sub> = X<sub>i</sub> / (m − 1).
+            </p>
+
+            <div class="table-responsive">
+              <table class="table table-generador" id="tablaResultados-{{ loop.index0 }}">
+                <thead>
+                  <tr>
+                    <th>i</th>
+                    <th>X<sub>i</sub></th>
+                    <th>R<sub>i</sub></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for fila in corrida.resultados %}
+                  <tr style="animation-delay: {{ loop.index0 * 10 }}ms" class="{% if loop.last and corrida.periodo %}fila-cierre-ciclo{% endif %}">
+                    <td>{{ fila.i }}</td>
+                    <td class="mono">{{ fila.xi }}</td>
+                    <td class="mono ri-cell">{{ "%.4f"|format(fila.ri) }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {{ panel_histograma("Con período máximo, la distribución debería verse pareja porque se visitan todos los residuos de m.", "-" ~ loop.index0) }}
+          {% endfor %}
+
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-rulers"></i>
+            <h3>Todavía no hay análisis</h3>
+            <p>Completa la(s) semilla(s), a, c y m en el panel de la izquierda y presiona "Analizar período".</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if corridas %}
+{% for corrida in corridas %}
+{{ script_resultados(corrida.resultados, "periodo_maximo_x0_" ~ corrida.x0, "-" ~ loop.index0) }}
+{% endfor %}
+{% endif %}
+{% endblock %}

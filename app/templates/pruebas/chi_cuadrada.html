@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "macros/campos.html" import campo_valores_ri, campo_alpha, campo_numero %}
+{% from "macros/resultados.html" import panel_histograma %}
+{% from "macros/pruebas.html" import caja_hipotesis, veredicto %}
+{% block title %}Prueba Chi-cuadrada · Pruebas 901N{% endblock %}
+
+{% block content %}
+<section class="metodo-header">
+  <div class="container">
+    <span class="eyebrow"><i class="bi bi-bar-chart-steps"></i> Prueba de uniformidad</span>
+    <h1>Prueba Chi-cuadrada</h1>
+    <p class="text-muted metodo-sub">
+      Divide el intervalo (0, 1) en m sub-intervalos (por defecto,
+      m ≈ √n), cuenta cuántos R<sub>i</sub> caen en cada uno (frecuencia
+      observada O<sub>i</sub>) y los compara contra la frecuencia esperada
+      E<sub>i</sub> = n/m si los datos fueran uniformes.
+    </p>
+    <code class="metodo-formula-lg">χ² = Σ (O<sub>i</sub> − E<sub>i</sub>)² / E<sub>i</sub>&nbsp;&nbsp;&nbsp;se rechaza si χ² &gt; χ²<sub>α,m−1</sub></code>
+  </div>
+</section>
+
+<section class="py-4 py-lg-5">
+  <div class="container">
+    <div class="row g-4">
+
+      <div class="col-lg-4">
+        <form method="post" class="form-panel sticky-lg-top">
+          <h2 class="form-panel-title"><i class="bi bi-sliders"></i> Parámetros</h2>
+
+          {{ campo_valores_ri(valores.valores) }}
+          {{ campo_numero("intervalos", "Sub-intervalos (m)", valores.intervalos, min=2,
+             ayuda="Déjalo vacío para usar m ≈ √n (recomendado por el documento de clase), o define tu propio valor.",
+             requerido=false) }}
+          {{ campo_alpha(valores.alpha) }}
+
+          <button type="submit" class="btn btn-signal w-100"><i class="bi bi-play-fill"></i> Ejecutar prueba</button>
+
+          {% if not resultado %}
+          <p class="form-hint mt-3"><i class="bi bi-info-circle"></i> Ya hay un conjunto de 50 R<sub>i</sub> de ejemplo cargado: solo presiona "Ejecutar prueba".</p>
+          {% endif %}
+        </form>
+      </div>
+
+      <div class="col-lg-8">
+        {% if resultado %}
+
+          {{ caja_hipotesis("R<sub>i</sub> ~ U(0, 1) (los números son uniformes)", "R<sub>i</sub> no son uniformes") }}
+
+          {{ veredicto(resultado.cumple,
+            "χ² calculado = " ~ "%.4f"|format(resultado.chi2_calculado) ~ " es menor que el valor crítico χ²<sub>α,m−1</sub> = " ~ "%.4f"|format(resultado.chi2_critico) ~ ", así que no hay evidencia para descartar que los R<sub>i</sub> sean uniformes.",
+            "χ² calculado = " ~ "%.4f"|format(resultado.chi2_calculado) ~ " supera el valor crítico χ²<sub>α,m−1</sub> = " ~ "%.4f"|format(resultado.chi2_critico) ~ ", así que este conjunto de R<sub>i</sub> no parece uniforme.") }}
+
+          <div class="stats-row">
+            <div class="stat-chip"><span class="stat-num">{{ resultado.n }}</span><span class="stat-label">valores de R<sub>i</sub></span></div>
+            <div class="stat-chip"><span class="stat-num">{{ resultado.m }}</span><span class="stat-label">sub-intervalos (m)</span></div>
+            <div class="stat-chip"><span class="stat-num">{{ "%.4f"|format(resultado.chi2_calculado) }}</span><span class="stat-label">χ² calculado</span></div>
+            <div class="stat-chip"><span class="stat-num">{{ "%.4f"|format(resultado.chi2_critico) }}</span><span class="stat-label">χ²<sub>α,m−1</sub> crítico</span></div>
+          </div>
+
+          <div class="results-panel">
+            <div class="results-panel-head"><h2><i class="bi bi-table"></i> Frecuencias por sub-intervalo</h2></div>
+            <div class="table-responsive">
+              <table class="table table-generador">
+                <thead>
+                  <tr>
+                    <th>Intervalo</th>
+                    <th>O<sub>i</sub> (observada)</th>
+                    <th>E<sub>i</sub> (esperada)</th>
+                    <th>(O<sub>i</sub>−E<sub>i</sub>)²/E<sub>i</sub></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for iv in resultado.intervalos %}
+                  <tr style="animation-delay: {{ loop.index0 * 12 }}ms">
+                    <td class="mono">[{{ "%.2f"|format(iv.limite_inf) }}, {{ "%.2f"|format(iv.limite_sup) }})</td>
+                    <td class="mono">{{ iv.oi }}</td>
+                    <td class="mono text-muted">{{ "%.2f"|format(iv.ei) }}</td>
+                    <td class="mono ri-cell">{{ "%.4f"|format(iv.aporte) }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {{ panel_histograma("Cada barra corresponde a uno de los m sub-intervalos usados en la prueba: mientras más parejas se vean, más uniforme es el conjunto.") }}
+
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-bar-chart-steps"></i>
+            <h3>Todavía no hay resultado</h3>
+            <p>Pega tu conjunto de R<sub>i</sub> en el panel de la izquierda y presiona "Ejecutar prueba".</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if resultado %}
+<script>
+  (function () {
+    const riValores = [{{ ri|join(', ') }}];
+    dibujarHistograma(document.getElementById('histograma'), riValores, {{ resultado.m }});
+  })();
+</script>
+{% endif %}
+{% endblock %}

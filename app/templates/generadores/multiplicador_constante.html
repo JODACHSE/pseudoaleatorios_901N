@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% from "macros/campos.html" import campo_numero, campo_digitos %}
+{% from "macros/resultados.html" import encabezado_acciones, panel_histograma, script_resultados %}
+{% block title %}Multiplicador constante · Generadores 901N{% endblock %}
+
+{% block content %}
+<section class="metodo-header">
+  <div class="container">
+    <div class="row align-items-center gy-4">
+      <div class="col-lg-7">
+        <span class="eyebrow"><i class="bi bi-asterisk"></i> Método no congruencial</span>
+        <h1>Multiplicador constante</h1>
+        <p class="text-muted metodo-sub">
+          Se multiplica la semilla X<sub>i</sub> por una constante fija
+          <strong>a</strong> (ambas con D dígitos) y se conservan los D
+          dígitos centrales del resultado como siguiente término.
+        </p>
+        <code class="metodo-formula-lg">Y<sub>i</sub> = a · X<sub>i</sub>&nbsp;&nbsp;&nbsp;X<sub>i+1</sub> = mitad( Y<sub>i</sub> ,&nbsp;D dígitos )&nbsp;&nbsp;&nbsp;R<sub>i</sub> = 0.X<sub>i+1</sub></code>
+      </div>
+      <div class="col-lg-5">
+        <figure class="metodo-diagrama">
+          <img src="{{ url_for('static', filename='img/algoritmo-multiplicador-constante.svg') }}" alt="Trayectoria de multiplicador constante con X0=1, a=9, D=1 dígito">
+          <figcaption>Ejemplo con X<sub>0</sub>=1, a=9, D=1 dígito: período 9, recorre todos los dígitos. No es una aritmética modular; el dial solo representa los 10 valores posibles de un dígito.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-4 py-lg-5">
+  <div class="container">
+    <div class="row g-4">
+
+      <div class="col-lg-4">
+        <form method="post" class="form-panel sticky-lg-top">
+          <h2 class="form-panel-title"><i class="bi bi-sliders"></i> Parámetros</h2>
+
+          {{ campo_numero("semilla", "Semilla X<sub>0</sub>", valores.semilla, min=1) }}
+
+          {{ campo_numero("constante", "Constante multiplicadora (a)", valores.constante, min=1) }}
+
+          {{ campo_digitos(valores.digitos) }}
+
+          {{ campo_numero("cantidad", "Cantidad de números a generar", valores.cantidad, min=1, max=500) }}
+
+          <button type="submit" class="btn btn-signal w-100"><i class="bi bi-play-fill"></i> Generar secuencia</button>
+
+          {% if not resultados %}
+          <p class="form-hint mt-3"><i class="bi bi-info-circle"></i> Ejemplo del documento de clase: semilla <strong>9803</strong> y a=<strong>6965</strong> ya están cargados.</p>
+          {% endif %}
+        </form>
+      </div>
+
+      <div class="col-lg-8">
+        {% if resultados %}
+
+          <div class="stats-row">
+            <div class="stat-chip"><span class="stat-num">{{ resultados|length }}</span><span class="stat-label">números generados</span></div>
+            <div class="stat-chip"><span class="stat-num">{{ digitos }}</span><span class="stat-label">dígitos (D) por término</span></div>
+            <div class="stat-chip"><span class="stat-num">{{ "%.4f"|format((resultados|sum(attribute='ri'))/(resultados|length)) }}</span><span class="stat-label">promedio de R<sub>i</sub></span></div>
+          </div>
+
+          <div class="results-panel">
+            {{ encabezado_acciones() }}
+
+            <div class="table-responsive">
+              <table class="table table-generador" id="tablaResultados">
+                <thead>
+                  <tr>
+                    <th>i</th>
+                    <th>X<sub>i</sub></th>
+                    <th>a</th>
+                    <th>a · X<sub>i</sub></th>
+                    <th>Dígitos centrales</th>
+                    <th>X<sub>i+1</sub></th>
+                    <th>R<sub>i</sub></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for fila in resultados %}
+                  <tr style="animation-delay: {{ loop.index0 * 18 }}ms">
+                    <td>{{ fila.i }}</td>
+                    <td class="mono">{{ fila.x }}</td>
+                    <td class="mono">{{ fila.a }}</td>
+                    <td class="mono text-muted">{{ fila.producto }}</td>
+                    <td class="mono hl-medio">{{ fila.medio }}</td>
+                    <td class="mono">{{ fila.xi }}</td>
+                    <td class="mono ri-cell">{{ "%.4f"|format(fila.ri) }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {{ panel_histograma() }}
+
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-hash"></i>
+            <h3>Todavía no hay números generados</h3>
+            <p>Completa la semilla, la constante y la cantidad de valores en el panel de la izquierda y presiona "Generar secuencia".</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ script_resultados(resultados, "multiplicador_constante") }}
+{% endblock %}

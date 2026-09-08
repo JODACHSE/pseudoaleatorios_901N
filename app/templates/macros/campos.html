@@ -1,0 +1,58 @@
+{# Campos de formulario reutilizables para los paneles de parámetros. #}
+
+{% macro campo_numero(id, etiqueta, valor, min=none, max=none, ayuda=none, requerido=true, clase_col=none, paso=none) %}
+<div class="mb-3{% if clase_col %} {{ clase_col }}{% endif %}">
+  <label for="{{ id }}" class="form-label">{{ etiqueta|safe }}</label>
+  <input type="number"
+         {% if min is not none %}min="{{ min }}"{% endif %}
+         {% if max is not none %}max="{{ max }}"{% endif %}
+         {% if paso is not none %}step="{{ paso }}"{% endif %}
+         class="form-control" id="{{ id }}" name="{{ id }}" value="{{ valor }}"
+         {% if requerido %}required{% endif %}>
+  {% if ayuda %}<div class="form-text">{{ ayuda|safe }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro campo_texto(id, etiqueta, valor, ayuda=none, requerido=true, placeholder=none) %}
+<div class="mb-3">
+  <label for="{{ id }}" class="form-label">{{ etiqueta|safe }}</label>
+  <input type="text" class="form-control" id="{{ id }}" name="{{ id }}" value="{{ valor }}"
+         {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+         {% if requerido %}required{% endif %}>
+  {% if ayuda %}<div class="form-text">{{ ayuda|safe }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro campo_textarea(id, etiqueta, valor, ayuda=none, requerido=true, filas=3, placeholder=none) %}
+<div class="mb-3">
+  <label for="{{ id }}" class="form-label">{{ etiqueta|safe }}</label>
+  <textarea class="form-control mono-textarea" id="{{ id }}" name="{{ id }}" rows="{{ filas }}"
+            {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+            {% if requerido %}required{% endif %}>{{ valor }}</textarea>
+  {% if ayuda %}<div class="form-text">{{ ayuda|safe }}</div>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro campo_digitos(valor) %}
+{{ campo_numero("digitos", "Dígitos a extraer (D)", valor, min=1,
+   ayuda="Déjalo vacío para calcularlo automáticamente a partir de la(s) semilla(s), o escribe tu propio valor.",
+   requerido=false) }}
+{% endmacro %}
+
+{% macro campo_alpha(valor) %}
+<div class="mb-3">
+  <label for="alpha" class="form-label">Nivel de significancia (α)</label>
+  <select class="form-select" id="alpha" name="alpha">
+    <option value="0.01" {% if valor=="0.01" %}selected{% endif %}>0.01 (99% de confianza)</option>
+    <option value="0.05" {% if valor=="0.05" %}selected{% endif %}>0.05 (95% de confianza)</option>
+    <option value="0.10" {% if valor=="0.10" %}selected{% endif %}>0.10 (90% de confianza)</option>
+  </select>
+  <div class="form-text">Define qué tan estricta es la prueba antes de rechazar H<sub>0</sub>.</div>
+</div>
+{% endmacro %}
+
+{% macro campo_valores_ri(valor, ayuda=none) %}
+{{ campo_textarea("valores", "Conjunto de números R<sub>i</sub>", valor,
+   ayuda=ayuda or "Escribe los valores de R<sub>i</sub> (entre 0 y 1) separados por coma. Puedes pegar los que obtuviste en cualquiera de los generadores.",
+   filas=4, placeholder="0.809, 0.042, 0.432, ...") }}
+{% endmacro %}

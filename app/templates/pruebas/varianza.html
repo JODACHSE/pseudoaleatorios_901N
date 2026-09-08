@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% from "macros/campos.html" import campo_valores_ri, campo_alpha %}
+{% from "macros/resultados.html" import encabezado_acciones, panel_histograma %}
+{% from "macros/pruebas.html" import caja_hipotesis, veredicto %}
+{% block title %}Prueba de varianza · Pruebas 901N{% endblock %}
+
+{% block content %}
+<section class="metodo-header">
+  <div class="container">
+    <span class="eyebrow"><i class="bi bi-distribute-vertical"></i> Prueba estadística</span>
+    <h1>Prueba de varianza</h1>
+    <p class="text-muted metodo-sub">
+      Verifica si la varianza del conjunto de R<sub>i</sub> es igual a
+      1/12 ≈ 0.0833, el valor teórico de una distribución uniforme
+      continua en (0, 1). Los límites de aceptación se construyen con la
+      distribución Chi-cuadrada.
+    </p>
+    <code class="metodo-formula-lg">V(r) = (1/(n−1)) Σ (R<sub>i</sub> − r̄)²&nbsp;&nbsp;&nbsp;L<sub>i,s</sub> = χ²<sub>(1∓α)/2,n−1</sub> / (12(n−1))</code>
+  </div>
+</section>
+
+<section class="py-4 py-lg-5">
+  <div class="container">
+    <div class="row g-4">
+
+      <div class="col-lg-4">
+        <form method="post" class="form-panel sticky-lg-top">
+          <h2 class="form-panel-title"><i class="bi bi-sliders"></i> Parámetros</h2>
+
+          {{ campo_valores_ri(valores.valores) }}
+          {{ campo_alpha(valores.alpha) }}
+
+          <button type="submit" class="btn btn-signal w-100"><i class="bi bi-play-fill"></i> Ejecutar prueba</button>
+
+          {% if not resultado %}
+          <p class="form-hint mt-3"><i class="bi bi-info-circle"></i> Ya hay un conjunto de 50 R<sub>i</sub> de ejemplo cargado: solo presiona "Ejecutar prueba".</p>
+          {% endif %}
+        </form>
+      </div>
+
+      <div class="col-lg-8">
+        {% if resultado %}
+
+          {{ caja_hipotesis("σ² = 1/12 (la varianza de los R<sub>i</sub> es 1/12)", "σ² ≠ 1/12 (la varianza de los R<sub>i</sub> no es 1/12)") }}
+
+          {{ veredicto(resultado.cumple,
+            "La varianza V(r) = " ~ "%.4f"|format(resultado.varianza) ~ " cae dentro del intervalo de aceptación, así que no hay evidencia para descartar que la varianza de los R<sub>i</sub> sea 1/12.",
+            "La varianza V(r) = " ~ "%.4f"|format(resultado.varianza) ~ " queda fuera del intervalo de aceptación, así que este conjunto de R<sub>i</sub> no parece tener varianza 1/12.") }}
+
+          <div class="stats-row">
+            <div class="stat-chip"><span class="stat-num">{{ resultado.n }}</span><span class="stat-label">valores de R<sub>i</sub></span></div>
+            <div class="stat-chip"><span class="stat-num">{{ "%.4f"|format(resultado.varianza) }}</span><span class="stat-label">varianza V(r)</span></div>
+            <div class="stat-chip"><span class="stat-num">0.0833</span><span class="stat-label">valor teórico 1/12</span></div>
+            <div class="stat-chip"><span class="stat-num">[{{ "%.4f"|format(resultado.li) }}, {{ "%.4f"|format(resultado.ls) }}]</span><span class="stat-label">intervalo de aceptación</span></div>
+          </div>
+
+          <div class="results-panel">
+            <div class="results-panel-head"><h2><i class="bi bi-clipboard-data"></i> Detalle del cálculo</h2></div>
+            <div class="table-responsive">
+              <table class="table table-generador">
+                <thead><tr><th>Cantidad</th><th>Valor</th></tr></thead>
+                <tbody>
+                  <tr><td>Promedio r̄</td><td class="mono">{{ "%.4f"|format(resultado.r_barra) }}</td></tr>
+                  <tr><td>χ²<sub>α/2, n−1</sub> (cola inferior)</td><td class="mono">{{ "%.4f"|format(resultado.chi2_inf) }}</td></tr>
+                  <tr><td>χ²<sub>1−α/2, n−1</sub> (cola superior)</td><td class="mono">{{ "%.4f"|format(resultado.chi2_sup) }}</td></tr>
+                  <tr><td>Grados de libertad (n − 1)</td><td class="mono">{{ resultado.n - 1 }}</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="results-panel">
+            {{ encabezado_acciones() }}
+            <div class="table-responsive">
+              <table class="table table-generador" id="tablaResultados">
+                <thead><tr><th>i</th><th>R<sub>i</sub></th></tr></thead>
+                <tbody>
+                  {% for r in ri %}
+                  <tr style="animation-delay: {{ loop.index0 * 8 }}ms">
+                    <td>{{ loop.index }}</td>
+                    <td class="mono ri-cell">{{ "%.4f"|format(r) }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {{ panel_histograma() }}
+
+        {% else %}
+          <div class="empty-state">
+            <i class="bi bi-distribute-vertical"></i>
+            <h3>Todavía no hay resultado</h3>
+            <p>Pega tu conjunto de R<sub>i</sub> en el panel de la izquierda y presiona "Ejecutar prueba".</p>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if resultado %}
+<script>
+  (function () {
+    const riValores = [{{ ri|join(', ') }}];
+    dibujarHistograma(document.getElementById('histograma'), riValores);
+    configurarExportacion('tablaResultados', 'btnCopiar', 'btnExportar', 'prueba_varianza');
+  })();
+</script>
+{% endif %}
+{% endblock %}

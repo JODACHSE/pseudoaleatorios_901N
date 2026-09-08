@@ -1,0 +1,10 @@
+{% macro tarjeta_metodo(tema) %}
+<a href="{{ url_for(tema.endpoint) }}" class="metodo-card">
+  <div class="metodo-tag">{{ tema.tag }}</div>
+  <i class="bi {{ tema.icono }} metodo-icon"></i>
+  <h3>{{ tema.titulo }}</h3>
+  <p>{{ tema.descripcion | safe }}</p>
+  <code class="metodo-formula">{{ tema.formula | safe }}</code>
+  <span class="metodo-cta">{{ tema.cta }} <i class="bi bi-arrow-right"></i></span>
+</a>
+{% endmacro %}

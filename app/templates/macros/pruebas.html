@@ -1,0 +1,113 @@
+{# Bloques reutilizables para las 5 páginas de pruebas estadísticas:
+   caja de hipótesis H0/H1 y tarjeta de veredicto (se rechaza / no se
+   rechaza H0), con el mismo lenguaje visual que las tarjetas de
+   "período máximo" de los generadores congruenciales. #}
+
+{% macro caja_hipotesis(h0, h1) %}
+<div class="hipotesis-box">
+  <div class="hipotesis-item">
+    <span class="hipotesis-tag">H<sub>0</sub></span>
+    <span>{{ h0|safe }}</span>
+  </div>
+  <div class="hipotesis-item">
+    <span class="hipotesis-tag hipotesis-tag-alt">H<sub>1</sub></span>
+    <span>{{ h1|safe }}</span>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro veredicto(cumple, texto_ok, texto_fail) %}
+<div class="veredicto-card {% if cumple %}veredicto-ok{% else %}veredicto-fail{% endif %}">
+  <i class="bi {% if cumple %}bi-patch-check-fill{% else %}bi-patch-exclamation-fill{% endif %}"></i>
+  <div>
+    <h3>
+      {% if cumple %}No se rechaza H<sub>0</sub>{% else %}Se rechaza H<sub>0</sub>{% endif %}
+    </h3>
+    <p>{% if cumple %}{{ texto_ok|safe }}{% else %}{{ texto_fail|safe }}{% endif %}</p>
+  </div>
+</div>
+{% endmacro %}
+
+{# Resumen de las 4 pruebas aplicadas automáticamente sobre la secuencia
+   que se acaba de generar (solo se usa en los 2 algoritmos elegidos para
+   la actividad adicional: congruencial lineal y productos medios).
+   `endpoint_otro`/`nombre_otro` arman el hipervínculo al otro algoritmo. #}
+{% macro resumen_validacion(validacion, endpoint_otro, nombre_otro, minimo_recomendado=30) %}
+<div class="validacion-panel">
+  <div class="results-panel-head">
+    <h2><i class="bi bi-clipboard2-check"></i> Validación estadística (actividad adicional)</h2>
+  </div>
+
+  {% if validacion %}
+    <div class="validacion-veredicto {% if validacion.pasa_todas %}veredicto-ok{% else %}veredicto-fail{% endif %}">
+      <i class="bi {% if validacion.pasa_todas %}bi-award-fill{% else %}bi-exclamation-octagon-fill{% endif %}"></i>
+      <div>
+        <h3>
+          {% if validacion.pasa_todas %}
+            Este algoritmo SÍ pasa las 4 pruebas
+          {% else %}
+            Este algoritmo NO pasa las 4 pruebas
+          {% endif %}
+        </h3>
+        <p>
+          Se aplicaron las 4 pruebas (α = {{ validacion.alpha }}) sobre los
+          {{ validacion.n }} valores de R<sub>i</sub> generados arriba.
+          {% if validacion.pasa_todas %}
+            Ninguna de las 4 rechaza H<sub>0</sub>: con estos parámetros,
+            el generador es apto para producir números pseudoaleatorios.
+          {% else %}
+            Al menos una prueba rechaza H<sub>0</sub>: revisa cuál abajo y
+            considera ajustar los parámetros o generar una muestra distinta.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="validacion-grid">
+      <div class="condicion-card {% if validacion.medias.cumple %}condicion-ok{% else %}condicion-fail{% endif %}">
+        <i class="bi {% if validacion.medias.cumple %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+        <div>
+          <strong>Prueba de medias</strong>
+          <span>r̄ = {{ "%.4f"|format(validacion.medias.r_barra) }} · esperado [{{ "%.4f"|format(validacion.medias.li) }}, {{ "%.4f"|format(validacion.medias.ls) }}]</span>
+        </div>
+      </div>
+
+      <div class="condicion-card {% if validacion.varianza.cumple %}condicion-ok{% else %}condicion-fail{% endif %}">
+        <i class="bi {% if validacion.varianza.cumple %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+        <div>
+          <strong>Prueba de varianza</strong>
+          <span>V(r) = {{ "%.4f"|format(validacion.varianza.varianza) }} · esperado [{{ "%.4f"|format(validacion.varianza.li) }}, {{ "%.4f"|format(validacion.varianza.ls) }}]</span>
+        </div>
+      </div>
+
+      <div class="condicion-card {% if validacion.chi_cuadrada.cumple %}condicion-ok{% else %}condicion-fail{% endif %}">
+        <i class="bi {% if validacion.chi_cuadrada.cumple %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+        <div>
+          <strong>Chi-cuadrada (uniformidad)</strong>
+          <span>χ² = {{ "%.4f"|format(validacion.chi_cuadrada.chi2_calculado) }} · crítico = {{ "%.4f"|format(validacion.chi_cuadrada.chi2_critico) }}</span>
+        </div>
+      </div>
+
+      <div class="condicion-card {% if validacion.corridas.cumple %}condicion-ok{% else %}condicion-fail{% endif %}">
+        <i class="bi {% if validacion.corridas.cumple %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+        <div>
+          <strong>Corridas (independencia)</strong>
+          <span>Z<sub>0</sub> = {{ "%.4f"|format(validacion.corridas.z0) }} · límite ±{{ "%.4f"|format(validacion.corridas.z_critico) }}</span>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="empty-state validacion-empty">
+      <i class="bi bi-hourglass-split"></i>
+      <h3>Necesitas al menos {{ minimo_recomendado }} números para validar</h3>
+      <p>Genera una muestra de {{ minimo_recomendado }} o más (recomendado: 100–200) para que las 4 pruebas den un resultado confiable.</p>
+    </div>
+  {% endif %}
+
+  <a href="{{ url_for(endpoint_otro) }}" class="validacion-link">
+    <i class="bi bi-arrow-left-right"></i>
+    Ver el otro algoritmo seleccionado: {{ nombre_otro }}
+    <i class="bi bi-arrow-right"></i>
+  </a>
+</div>
+{% endmacro %}
