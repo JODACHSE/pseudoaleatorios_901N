@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Comparación de algoritmos · Generadores 901N{% endblock %}
+
+{% block content %}
+<section class="metodo-header">
+  <div class="container">
+    <span class="eyebrow"><i class="bi bi-bar-chart-line"></i> Actividad adicional · punto 6</span>
+    <h1>Comparación de algoritmos</h1>
+    <p class="text-muted metodo-sub">
+      Compara el comportamiento estadístico de los 2 algoritmos elegidos
+      para la actividad (<strong>congruencial lineal</strong> y
+      <strong>productos medios</strong>) a partir de la última secuencia
+      válida (n ≥ 30) que generaste en cada uno.
+    </p>
+  </div>
+</section>
+
+<section class="py-4 py-lg-5">
+  <div class="container">
+
+    {% if resumen %}
+
+      <div class="stats-row">
+        <div class="stat-chip"><span class="stat-num">{{ comp_lineal.n }}</span><span class="stat-label">n · Congruencial lineal</span></div>
+        <div class="stat-chip"><span class="stat-num">{{ comp_productos.n }}</span><span class="stat-label">n · Productos medios</span></div>
+        <div class="stat-chip"><span class="stat-num">{{ comp_lineal.alpha }}</span><span class="stat-label">α utilizado</span></div>
+      </div>
+
+      <div class="results-panel">
+        <div class="results-panel-head">
+          <h2><i class="bi bi-table"></i> Tabla comparativa</h2>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-generador tabla-comparativa">
+            <thead>
+              <tr>
+                <th>Propiedad evaluada</th>
+                <th>Congruencial lineal</th>
+                <th>Productos medios</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fila in resumen.filas %}
+              <tr>
+                <td>{{ fila.propiedad }}</td>
+                <td class="comparativa-celda {% if fila.lineal %}comparativa-ok{% else %}comparativa-fail{% endif %}">
+                  <i class="bi {% if fila.lineal %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+                  {% if fila.lineal %}No se rechaza H<sub>0</sub>{% else %}Se rechaza H<sub>0</sub>{% endif %}
+                </td>
+                <td class="comparativa-celda {% if fila.productos %}comparativa-ok{% else %}comparativa-fail{% endif %}">
+                  <i class="bi {% if fila.productos %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+                  {% if fila.productos %}No se rechaza H<sub>0</sub>{% else %}Se rechaza H<sub>0</sub>{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+              <tr class="fila-cierre-ciclo">
+                <td><strong>¿Cumple las condiciones?</strong></td>
+                <td class="comparativa-celda {% if comp_lineal.pasa_todas %}comparativa-ok{% else %}comparativa-fail{% endif %}">
+                  <strong>{% if comp_lineal.pasa_todas %}Sí{% else %}No{% endif %}</strong>
+                </td>
+                <td class="comparativa-celda {% if comp_productos.pasa_todas %}comparativa-ok{% else %}comparativa-fail{% endif %}">
+                  <strong>{% if comp_productos.pasa_todas %}Sí{% else %}No{% endif %}</strong>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="veredicto-card {% if resumen.mejor == 'empate_parcial' %}veredicto-fail{% else %}veredicto-ok{% endif %}" style="margin-top:1.4rem;">
+        <i class="bi bi-award-fill"></i>
+        <div>
+          <h3>
+            {% if resumen.mejor == 'empate_pasan' %}
+              Ambos algoritmos presentan un comportamiento estadístico adecuado
+            {% elif resumen.mejor == 'lineal' %}
+              Congruencial lineal presenta mejor comportamiento estadístico
+            {% elif resumen.mejor == 'productos' %}
+              Productos medios presenta mejor comportamiento estadístico
+            {% else %}
+              Los 2 algoritmos quedan empatados ({{ resumen.puntaje_lineal }}/4 pruebas cada uno)
+            {% endif %}
+          </h3>
+          <p>
+            {% if resumen.mejor == 'empate_pasan' %}
+              Los 2 pasan las 5 pruebas (uniformidad, media, varianza e
+              independencia): con los parámetros usados, cualquiera de los 2
+              es adecuado para generar números pseudoaleatorios.
+            {% elif resumen.mejor == 'lineal' %}
+              Congruencial lineal aprobó {{ resumen.puntaje_lineal }}/4 de las
+              propiedades evaluadas, frente a {{ resumen.puntaje_productos }}/4
+              de Productos medios. Con los parámetros usados, el congruencial
+              lineal reproduce mejor el comportamiento esperado de una
+              distribución U(0,1).
+            {% elif resumen.mejor == 'productos' %}
+              Productos medios aprobó {{ resumen.puntaje_productos }}/4 de las
+              propiedades evaluadas, frente a {{ resumen.puntaje_lineal }}/4
+              de Congruencial lineal. Con los parámetros usados, productos
+              medios reproduce mejor el comportamiento esperado de una
+              distribución U(0,1).
+            {% else %}
+              Ninguno de los 2 aprueba todas las pruebas y ambos fallan la
+              misma cantidad. Revisa el informe detallado de cada algoritmo
+              (en su propia página) para decidir cuál falla en un aspecto
+              menos crítico para tu caso de uso, o ajusta los parámetros de
+              generación (semillas, módulo, cantidad de datos) y vuelve a
+              intentar.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <p class="form-hint mt-3">
+        <i class="bi bi-info-circle"></i>
+        Esta comparación usa la última secuencia generada en cada página
+        durante esta sesión del navegador. Si generas una nueva secuencia en
+        cualquiera de los 2 algoritmos, vuelve aquí para ver la tabla actualizada.
+      </p>
+
+    {% else %}
+      <div class="empty-state">
+        <i class="bi bi-bar-chart-line"></i>
+        <h3>Todavía falta generar alguna de las 2 secuencias</h3>
+        <p>
+          Para comparar, primero genera una muestra de al menos 30 números
+          (recomendado 100–200) en cada uno de los 2 algoritmos:
+        </p>
+        <div class="d-flex flex-wrap gap-2 justify-content-center mt-3">
+          <a href="{{ url_for('generadores.congruencial_lineal') }}" class="btn btn-signal {% if comp_lineal %}btn-outline-secondary{% endif %}">
+            <i class="bi {% if comp_lineal %}bi-check-circle{% else %}bi-arrow-right{% endif %}"></i>
+            Congruencial lineal {% if comp_lineal %}(listo){% endif %}
+          </a>
+          <a href="{{ url_for('generadores.productos_medios') }}" class="btn btn-signal {% if comp_productos %}btn-outline-secondary{% endif %}">
+            <i class="bi {% if comp_productos %}bi-check-circle{% else %}bi-arrow-right{% endif %}"></i>
+            Productos medios {% if comp_productos %}(listo){% endif %}
+          </a>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

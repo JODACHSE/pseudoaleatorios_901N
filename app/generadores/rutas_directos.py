@@ -1,4 +1,4 @@
-from flask import render_template, request, flash
+from flask import render_template, request, flash, session
 
 from . import bp
 from .logica.comunes import parse_semillas
@@ -8,6 +8,7 @@ from .logica.metodos_directos import (
     generar_multiplicador_constante,
 )
 from .logica.validacion import validar_secuencia
+from .logica.comparacion import resumen_ligero
 
 
 def _leer_digitos(valores: dict) -> int | None:
@@ -77,9 +78,17 @@ def productos_medios():
             resultados, digitos = generar_productos_medios(semillas, cantidad, digitos_d)
             orden = len(semillas)
             # Algoritmo seleccionado para la actividad adicional: valida
-            # automáticamente la secuencia recién generada con las 4
-            # pruebas (medias, varianza, Chi-cuadrada, corridas).
+            # automáticamente la secuencia recién generada con las 5
+            # pruebas (medias, varianza, Chi-cuadrada, Kolmogorov-Smirnov
+            # y corridas), y guarda un resumen liviano en sesión para
+            # poder comparar contra el otro algoritmo en /comparacion.
             validacion = validar_secuencia([fila["ri"] for fila in resultados])
+            if validacion:
+                session["comparacion_productos_medios"] = resumen_ligero(
+                    validacion,
+                    {"semillas": semillas, "digitos": digitos, "cantidad": cantidad},
+                    "Productos medios",
+                )
         except ValueError as err:
             flash(str(err) if str(err) else "Revisa los datos ingresados: deben ser números enteros válidos.", "danger")
 

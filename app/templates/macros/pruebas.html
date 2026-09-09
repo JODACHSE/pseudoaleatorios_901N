@@ -28,7 +28,7 @@
 </div>
 {% endmacro %}
 
-{# Resumen de las 4 pruebas aplicadas automáticamente sobre la secuencia
+{# Resumen de las 5 pruebas aplicadas automáticamente sobre la secuencia
    que se acaba de generar (solo se usa en los 2 algoritmos elegidos para
    la actividad adicional: congruencial lineal y productos medios).
    `endpoint_otro`/`nombre_otro` arman el hipervínculo al otro algoritmo. #}
@@ -44,17 +44,19 @@
       <div>
         <h3>
           {% if validacion.pasa_todas %}
-            Este algoritmo SÍ pasa las 4 pruebas
+            Este algoritmo SÍ pasa las 5 pruebas
           {% else %}
-            Este algoritmo NO pasa las 4 pruebas
+            Este algoritmo NO pasa las 5 pruebas
           {% endif %}
         </h3>
         <p>
-          Se aplicaron las 4 pruebas (α = {{ validacion.alpha }}) sobre los
-          {{ validacion.n }} valores de R<sub>i</sub> generados arriba.
+          Se aplicaron las 5 pruebas (α = {{ validacion.alpha }}) sobre los
+          {{ validacion.n }} valores de R<sub>i</sub> generados arriba:
+          uniformidad (Chi-cuadrada y Kolmogorov-Smirnov), media, varianza
+          e independencia (corridas).
           {% if validacion.pasa_todas %}
-            Ninguna de las 4 rechaza H<sub>0</sub>: con estos parámetros,
-            el generador es apto para producir números pseudoaleatorios.
+            Ninguna rechaza H<sub>0</sub>: con estos parámetros, el
+            generador es apto para producir números pseudoaleatorios.
           {% else %}
             Al menos una prueba rechaza H<sub>0</sub>: revisa cuál abajo y
             considera ajustar los parámetros o generar una muestra distinta.
@@ -88,6 +90,14 @@
         </div>
       </div>
 
+      <div class="condicion-card {% if validacion.kolmogorov_smirnov.cumple %}condicion-ok{% else %}condicion-fail{% endif %}">
+        <i class="bi {% if validacion.kolmogorov_smirnov.cumple %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
+        <div>
+          <strong>Kolmogorov-Smirnov (uniformidad)</strong>
+          <span>D = {{ "%.4f"|format(validacion.kolmogorov_smirnov.d) }} · crítico = {{ "%.4f"|format(validacion.kolmogorov_smirnov.d_critico) }}</span>
+        </div>
+      </div>
+
       <div class="condicion-card {% if validacion.corridas.cumple %}condicion-ok{% else %}condicion-fail{% endif %}">
         <i class="bi {% if validacion.corridas.cumple %}bi-check-circle-fill{% else %}bi-x-circle-fill{% endif %}"></i>
         <div>
@@ -96,11 +106,13 @@
         </div>
       </div>
     </div>
+
+    {{ informe_detallado(validacion) }}
   {% else %}
     <div class="empty-state validacion-empty">
       <i class="bi bi-hourglass-split"></i>
       <h3>Necesitas al menos {{ minimo_recomendado }} números para validar</h3>
-      <p>Genera una muestra de {{ minimo_recomendado }} o más (recomendado: 100–200) para que las 4 pruebas den un resultado confiable.</p>
+      <p>Genera una muestra de {{ minimo_recomendado }} o más (recomendado: 100–200) para que las 5 pruebas den un resultado confiable.</p>
     </div>
   {% endif %}
 
@@ -109,5 +121,145 @@
     Ver el otro algoritmo seleccionado: {{ nombre_otro }}
     <i class="bi bi-arrow-right"></i>
   </a>
+  <a href="{{ url_for('generadores.comparacion') }}" class="validacion-link validacion-link-alt">
+    <i class="bi bi-bar-chart-line"></i>
+    Ver tabla comparativa de los 2 algoritmos
+    <i class="bi bi-arrow-right"></i>
+  </a>
+</div>
+{% endmacro %}
+
+{# Informe estadístico completo de las 5 pruebas: H0/H1, nivel de
+   significancia, estadístico de prueba, valor crítico, regla de
+   decisión y conclusión con interpretación (qué implica el resultado
+   sobre la calidad de los números pseudoaleatorios), tal como lo pide
+   la actividad adicional. Se muestra como acordeón para no duplicar en
+   pantalla toda la info que ya está en las tarjetas de arriba. #}
+{% macro informe_detallado(v) %}
+<div class="informe-detallado-wrap">
+  <div class="accordion informe-detallado" id="informeDetallado">
+
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed {% if not v.chi_cuadrada.cumple %}informe-btn-fail{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#informeChi2">
+          <i class="bi bi-bar-chart-steps me-2"></i>&nbsp;1. Uniformidad — Chi-cuadrada
+        </button>
+      </h2>
+      <div id="informeChi2" class="accordion-collapse collapse" data-bs-parent="#informeDetallado">
+        <div class="accordion-body">
+          {{ caja_hipotesis("R<sub>i</sub> ~ U(0,1): los números provienen de una distribución uniforme en (0,1)", "R<sub>i</sub> no se distribuyen U(0,1)") }}
+          <ul class="informe-lista">
+            <li><strong>Nivel de significancia:</strong> α = {{ v.alpha }}</li>
+            <li><strong>Estadístico de prueba:</strong> χ²<sub>calc</sub> = Σ(O<sub>i</sub>−E<sub>i</sub>)²/E<sub>i</sub> = {{ "%.4f"|format(v.chi_cuadrada.chi2_calculado) }}, con m = {{ v.chi_cuadrada.m }} intervalos ({{ v.chi_cuadrada.m - 1 }} grados de libertad)</li>
+            <li><strong>Valor crítico:</strong> χ²<sub>α, {{ v.chi_cuadrada.m - 1 }}</sub> = {{ "%.4f"|format(v.chi_cuadrada.chi2_critico) }}</li>
+            <li><strong>Regla de decisión:</strong> se rechaza H<sub>0</sub> si χ²<sub>calc</sub> &gt; χ²<sub>crítico</sub>; en caso contrario, no se rechaza.</li>
+          </ul>
+          {{ veredicto(v.chi_cuadrada.cumple,
+            "χ²<sub>calc</sub> = " ~ "%.4f"|format(v.chi_cuadrada.chi2_calculado) ~ " no supera el valor crítico χ²<sub>crítico</sub> = " ~ "%.4f"|format(v.chi_cuadrada.chi2_critico) ~ ". No hay evidencia de que las frecuencias observadas por intervalo se aparten de las esperadas: la forma general de la distribución de los R<sub>i</sub> es compatible con U(0,1), lo cual respalda su uso en una simulación que asuma esa distribución.",
+            "χ²<sub>calc</sub> = " ~ "%.4f"|format(v.chi_cuadrada.chi2_calculado) ~ " supera el valor crítico χ²<sub>crítico</sub> = " ~ "%.4f"|format(v.chi_cuadrada.chi2_critico) ~ ". Algunos intervalos concentran más o menos valores de los esperados: la secuencia no se comporta como U(0,1), lo que puede sesgar cualquier simulación que la use.") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed {% if not v.kolmogorov_smirnov.cumple %}informe-btn-fail{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#informeKS">
+          <i class="bi bi-graph-up me-2"></i>&nbsp;2. Uniformidad — Kolmogorov-Smirnov
+        </button>
+      </h2>
+      <div id="informeKS" class="accordion-collapse collapse" data-bs-parent="#informeDetallado">
+        <div class="accordion-body">
+          {{ caja_hipotesis("R<sub>i</sub> ~ U(0,1): los números provienen de una distribución uniforme en (0,1)", "R<sub>i</sub> no se distribuyen U(0,1)") }}
+          <ul class="informe-lista">
+            <li><strong>Nivel de significancia:</strong> α = {{ v.alpha }}</li>
+            <li><strong>Estadístico de prueba:</strong> D = max(D<sup>+</sup>, D<sup>−</sup>) = {{ "%.4f"|format(v.kolmogorov_smirnov.d) }}, la mayor distancia entre la función de distribución empírica y la teórica U(0,1)</li>
+            <li><strong>Valor crítico:</strong> D<sub>α,n</sub> = {{ "%.4f"|format(v.kolmogorov_smirnov.d_critico) }} (n = {{ v.n }})</li>
+            <li><strong>Regla de decisión:</strong> se rechaza H<sub>0</sub> si D &gt; D<sub>α,n</sub>; en caso contrario, no se rechaza.</li>
+          </ul>
+          {{ veredicto(v.kolmogorov_smirnov.cumple,
+            "D = " ~ "%.4f"|format(v.kolmogorov_smirnov.d) ~ " no supera el valor crítico D<sub>α,n</sub> = " ~ "%.4f"|format(v.kolmogorov_smirnov.d_critico) ~ ". La distribución empírica de los R<sub>i</sub> se ajusta a la uniforme teórica en todo el rango (0,1), confirmando (junto con Chi-cuadrada) que el generador no favorece ninguna zona del intervalo.",
+            "D = " ~ "%.4f"|format(v.kolmogorov_smirnov.d) ~ " supera el valor crítico D<sub>α,n</sub> = " ~ "%.4f"|format(v.kolmogorov_smirnov.d_critico) ~ ". En algún punto del rango (0,1) la distribución empírica se aleja demasiado de la teórica, lo que confirma que los R<sub>i</sub> no se comportan como U(0,1).") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed {% if not v.medias.cumple %}informe-btn-fail{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#informeMedias">
+          <i class="bi bi-calculator me-2"></i>&nbsp;3. Media
+        </button>
+      </h2>
+      <div id="informeMedias" class="accordion-collapse collapse" data-bs-parent="#informeDetallado">
+        <div class="accordion-body">
+          {{ caja_hipotesis("μ = 0.5: la media teórica de R<sub>i</sub> ~ U(0,1)", "μ ≠ 0.5") }}
+          <ul class="informe-lista">
+            <li><strong>Media experimental:</strong> r̄ = {{ "%.4f"|format(v.medias.r_barra) }}</li>
+            <li><strong>Media teórica:</strong> μ = 0.5</li>
+            <li><strong>Nivel de significancia:</strong> α = {{ v.alpha }}</li>
+            <li><strong>Estadístico de prueba / criterio:</strong> se compara r̄ contra el intervalo de aceptación 0.5 ± Z<sub>α/2</sub>·(1/√(12n)) = [{{ "%.4f"|format(v.medias.li) }}, {{ "%.4f"|format(v.medias.ls) }}] (Z<sub>α/2</sub> = {{ "%.4f"|format(v.medias.z) }})</li>
+            <li><strong>Regla de decisión:</strong> se rechaza H<sub>0</sub> si r̄ queda fuera de [{{ "%.4f"|format(v.medias.li) }}, {{ "%.4f"|format(v.medias.ls) }}]; en caso contrario, no se rechaza.</li>
+          </ul>
+          {{ veredicto(v.medias.cumple,
+            "r̄ = " ~ "%.4f"|format(v.medias.r_barra) ~ " cae dentro del intervalo de aceptación. La diferencia con la media teórica (0.5) no es estadísticamente significativa: el generador no muestra sesgo sistemático hacia valores altos ni bajos.",
+            "r̄ = " ~ "%.4f"|format(v.medias.r_barra) ~ " queda fuera del intervalo de aceptación. La diferencia con la media teórica (0.5) sí es estadísticamente significativa: el generador está sesgado hacia " ~ ("valores altos" if v.medias.r_barra > 0.5 else "valores bajos") ~ ", lo cual distorsionaría los resultados de cualquier simulación que dependa de esta secuencia.") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed {% if not v.varianza.cumple %}informe-btn-fail{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#informeVarianza">
+          <i class="bi bi-distribute-vertical me-2"></i>&nbsp;4. Varianza
+        </button>
+      </h2>
+      <div id="informeVarianza" class="accordion-collapse collapse" data-bs-parent="#informeDetallado">
+        <div class="accordion-body">
+          {{ caja_hipotesis("σ² = 1/12 ≈ 0.0833: la varianza teórica de R<sub>i</sub> ~ U(0,1)", "σ² ≠ 1/12") }}
+          <ul class="informe-lista">
+            <li><strong>Varianza experimental:</strong> V(r) = {{ "%.4f"|format(v.varianza.varianza) }}</li>
+            <li><strong>Varianza teórica:</strong> σ² = 1/12 ≈ 0.0833</li>
+            <li><strong>Nivel de significancia:</strong> α = {{ v.alpha }}</li>
+            <li><strong>Estadístico de prueba / criterio:</strong> se compara V(r) contra el intervalo de aceptación [χ²<sub>α/2,n−1</sub>, χ²<sub>1−α/2,n−1</sub>] / (12(n−1)) = [{{ "%.4f"|format(v.varianza.li) }}, {{ "%.4f"|format(v.varianza.ls) }}]</li>
+            <li><strong>Regla de decisión:</strong> se rechaza H<sub>0</sub> si V(r) queda fuera de [{{ "%.4f"|format(v.varianza.li) }}, {{ "%.4f"|format(v.varianza.ls) }}]; en caso contrario, no se rechaza.</li>
+          </ul>
+          {{ veredicto(v.varianza.cumple,
+            "V(r) = " ~ "%.4f"|format(v.varianza.varianza) ~ " cae dentro del intervalo de aceptación. La dispersión de los R<sub>i</sub> es consistente con la de una uniforme (0,1): los valores cubren el rango completo sin concentrarse de más ni de menos alrededor del centro.",
+            "V(r) = " ~ "%.4f"|format(v.varianza.varianza) ~ " queda fuera del intervalo de aceptación. La dispersión observada " ~ ("es menor a la esperada (los R<sub>i</sub> se concentran demasiado cerca del centro)" if v.varianza.varianza < v.varianza.li else "es mayor a la esperada (los R<sub>i</sub> se acumulan demasiado en los extremos)") ~ ", por lo que la secuencia no reproduce correctamente la variabilidad de una U(0,1).") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item">
+      <h2 class="accordion-header">
+        <button class="accordion-button collapsed {% if not v.corridas.cumple %}informe-btn-fail{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#informeCorridas">
+          <i class="bi bi-shuffle me-2"></i>&nbsp;5. Independencia — Corridas arriba y abajo
+        </button>
+      </h2>
+      <div id="informeCorridas" class="accordion-collapse collapse" data-bs-parent="#informeDetallado">
+        <div class="accordion-body">
+          <p class="informe-justificacion">
+            <strong>Prueba seleccionada y justificación:</strong> corridas arriba y
+            abajo de la media. Es la prueba de independencia estándar cuando solo
+            se dispone de la secuencia de R<sub>i</sub> (no de los índices de una
+            tabla): convierte cada R<sub>i</sub> en 1 (si R<sub>i</sub> ≥ 0.5) o 0
+            (si R<sub>i</sub> &lt; 0.5) y cuenta cuántas veces cambia la secuencia
+            (corridas). Un número de corridas muy distinto al esperado bajo
+            independencia sugiere que un valor influye en el siguiente.
+          </p>
+          {{ caja_hipotesis("los R<sub>i</sub> son independientes entre sí", "los R<sub>i</sub> no son independientes (existe algún patrón o correlación)") }}
+          <ul class="informe-lista">
+            <li><strong>Nivel de significancia:</strong> α = {{ v.alpha }}</li>
+            <li><strong>Estadístico de prueba:</strong> Z<sub>0</sub> = (C<sub>0</sub> − μ<sub>C0</sub>) / σ<sub>C0</sub> = {{ "%.4f"|format(v.corridas.z0) }}</li>
+            <li><strong>Valor crítico:</strong> Z<sub>α/2</sub> = ±{{ "%.4f"|format(v.corridas.z_critico) }}</li>
+            <li><strong>Regla de decisión:</strong> se rechaza H<sub>0</sub> si |Z<sub>0</sub>| &gt; Z<sub>α/2</sub>; en caso contrario, no se rechaza.</li>
+          </ul>
+          {{ veredicto(v.corridas.cumple,
+            "Z<sub>0</sub> = " ~ "%.4f"|format(v.corridas.z0) ~ " cae dentro de ±" ~ "%.4f"|format(v.corridas.z_critico) ~ ". El número de corridas observado es consistente con el esperado bajo independencia: no hay evidencia de que un R<sub>i</sub> influya en el siguiente, por lo que la secuencia puede tratarse como una muestra de valores independientes.",
+            "Z<sub>0</sub> = " ~ "%.4f"|format(v.corridas.z0) ~ " cae fuera de ±" ~ "%.4f"|format(v.corridas.z_critico) ~ ". Hay evidencia de dependencia entre valores consecutivos (" ~ ("demasiadas corridas: alternancia excesiva" if v.corridas.z0 > 0 else "muy pocas corridas: rachas largas de valores del mismo lado") ~ "), lo que puede introducir correlación no deseada en una simulación que use esta secuencia.") }}
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 {% endmacro %}

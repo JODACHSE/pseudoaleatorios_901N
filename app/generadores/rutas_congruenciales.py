@@ -1,4 +1,4 @@
-from flask import render_template, request, flash
+from flask import render_template, request, flash, session
 
 from . import bp
 from .logica.comunes import parse_semillas
@@ -10,6 +10,7 @@ from .logica.metodos_congruenciales import (
     generar_secuencia_con_periodo,
 )
 from .logica.validacion import validar_secuencia
+from .logica.comparacion import resumen_ligero, comparar
 
 
 @bp.route("/congruencial-lineal", methods=["GET", "POST"])
@@ -35,9 +36,17 @@ def congruencial_lineal():
                 raise ValueError("La cantidad de números debe estar entre 1 y 2000.")
             resultados = generar_congruencial_lineal(x0, a, c, m, cantidad)
             # Algoritmo seleccionado para la actividad adicional: valida
-            # automáticamente la secuencia recién generada con las 4
-            # pruebas (medias, varianza, Chi-cuadrada, corridas).
+            # automáticamente la secuencia recién generada con las 5
+            # pruebas (medias, varianza, Chi-cuadrada, Kolmogorov-Smirnov
+            # y corridas), y guarda un resumen liviano en sesión para
+            # poder comparar contra el otro algoritmo en /comparacion.
             validacion = validar_secuencia([fila["ri"] for fila in resultados])
+            if validacion:
+                session["comparacion_congruencial_lineal"] = resumen_ligero(
+                    validacion,
+                    {"x0": x0, "a": a, "c": c, "m": m, "cantidad": cantidad},
+                    "Congruencial lineal",
+                )
         except ValueError as err:
             flash(str(err) if str(err) else "Revisa los datos ingresados: deben ser números enteros válidos.", "danger")
 
@@ -155,4 +164,21 @@ def periodo_maximo_congruencial_lineal():
         analisis=analisis,
         corridas=corridas,
         valores=valores,
+    )
+
+
+@bp.route("/comparacion")
+def comparacion():
+    """Actividad adicional (punto 6): compara el comportamiento estadístico
+    de los 2 algoritmos elegidos (congruencial lineal y productos medios)
+    usando el último resumen de validación que cada página guardó en
+    sesión al generar una secuencia con n >= 30."""
+    comp_lineal = session.get("comparacion_congruencial_lineal")
+    comp_productos = session.get("comparacion_productos_medios")
+
+    return render_template(
+        "generadores/comparacion.html",
+        comp_lineal=comp_lineal,
+        comp_productos=comp_productos,
+        resumen=comparar(comp_lineal, comp_productos),
     )

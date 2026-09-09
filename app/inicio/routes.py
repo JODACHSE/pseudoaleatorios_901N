@@ -153,6 +153,20 @@ TEMARIO = [
             },
         ],
     },
+    {
+        "bloque": "Actividad adicional",
+        "temas": [
+            {
+                "titulo": "Comparación de algoritmos",
+                "endpoint": "generadores.comparacion",
+                "tag": "Congruencial lineal vs. Productos medios",
+                "icono": "bi-bar-chart-line",
+                "descripcion": "Genera una secuencia en cada uno de los 2 algoritmos elegidos y compara su comportamiento estadístico (uniformidad, media, varianza e independencia) en una sola tabla.",
+                "formula": "Uniformidad · Media · Varianza · Independencia",
+                "cta": "Ver comparación",
+            },
+        ],
+    },
 ]
 
 

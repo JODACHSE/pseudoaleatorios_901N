@@ -643,3 +643,75 @@ code { color: inherit; }
   transition: background .15s ease;
 }
 .validacion-link:hover { background: #0d1626; color: var(--signal); }
+.validacion-link-alt { margin-top: .6rem; background: var(--paper-raised); color: var(--ink); border: 1px solid var(--line); }
+.validacion-link-alt:hover { background: var(--teal-soft); color: var(--teal); }
+
+/* ==========================================================================
+   Informe estadístico detallado (acordeón con las 5 pruebas: H0/H1,
+   estadístico, valor crítico, regla de decisión y conclusión)
+   ========================================================================== */
+.informe-detallado-wrap { margin: 0 1.4rem 1.3rem; }
+.informe-detallado .accordion-item {
+  background: var(--paper-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden;
+  margin-bottom: .6rem;
+}
+.informe-detallado .accordion-item:last-child { margin-bottom: 0; }
+.informe-detallado .accordion-button {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: .92rem;
+  color: var(--ink);
+  background: var(--paper-raised);
+  box-shadow: none !important;
+}
+.informe-detallado .accordion-button:not(.collapsed) {
+  background: var(--teal-soft);
+  color: var(--ink);
+}
+.informe-detallado .accordion-button.informe-btn-fail:not(.collapsed) {
+  background: var(--signal-soft);
+}
+.informe-detallado .accordion-button::after { flex-shrink: 0; }
+.informe-detallado .accordion-body { padding: 1.1rem 1.3rem 1.3rem; }
+
+.informe-lista {
+  list-style: none;
+  margin: 0 0 1.2rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.informe-lista li {
+  font-size: .87rem;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: .55rem .8rem;
+}
+.informe-lista li strong { color: var(--ink); }
+
+.informe-justificacion {
+  font-size: .87rem;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: .8rem 1rem;
+  margin-bottom: 1.2rem;
+}
+.informe-justificacion strong { color: var(--ink); }
+
+/* ==========================================================================
+   Comparación de algoritmos (actividad adicional, punto 6)
+   ========================================================================== */
+.tabla-comparativa th:first-child, .tabla-comparativa td:first-child { text-align: left; }
+.tabla-comparativa th, .tabla-comparativa td { text-align: center; vertical-align: middle; }
+.comparativa-celda { font-weight: 600; font-size: .88rem; white-space: nowrap; }
+.comparativa-celda i { margin-right: .35rem; }
+.comparativa-ok { color: var(--teal); }
+.comparativa-fail { color: var(--signal-ink); }
