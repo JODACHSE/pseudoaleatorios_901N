@@ -35,11 +35,6 @@ def congruencial_lineal():
             if not (1 <= cantidad <= 2000):
                 raise ValueError("La cantidad de números debe estar entre 1 y 2000.")
             resultados = generar_congruencial_lineal(x0, a, c, m, cantidad)
-            # Algoritmo seleccionado para la actividad adicional: valida
-            # automáticamente la secuencia recién generada con las 5
-            # pruebas (medias, varianza, Chi-cuadrada, Kolmogorov-Smirnov
-            # y corridas), y guarda un resumen liviano en sesión para
-            # poder comparar contra el otro algoritmo en /comparacion.
             validacion = validar_secuencia([fila["ri"] for fila in resultados])
             if validacion:
                 session["comparacion_congruencial_lineal"] = resumen_ligero(

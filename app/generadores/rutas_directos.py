@@ -77,11 +77,6 @@ def productos_medios():
                 raise ValueError("La cantidad de números debe estar entre 1 y 2000.")
             resultados, digitos = generar_productos_medios(semillas, cantidad, digitos_d)
             orden = len(semillas)
-            # Algoritmo seleccionado para la actividad adicional: valida
-            # automáticamente la secuencia recién generada con las 5
-            # pruebas (medias, varianza, Chi-cuadrada, Kolmogorov-Smirnov
-            # y corridas), y guarda un resumen liviano en sesión para
-            # poder comparar contra el otro algoritmo en /comparacion.
             validacion = validar_secuencia([fila["ri"] for fila in resultados])
             if validacion:
                 session["comparacion_productos_medios"] = resumen_ligero(
